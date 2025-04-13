@@ -78,8 +78,6 @@ if uploaded_resume and job_description:
         )
 
 
-pip install transformers
-pip install torch
 
 from transformers import pipeline
 
