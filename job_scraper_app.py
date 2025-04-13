@@ -4,16 +4,22 @@ from transformers import pipeline
 
 # Function to tailor the resume based on job description
 def tailor_resume(resume_text, job_description):
-    # Initialize a summarization pipeline (or you can use other transformers models for tailoring)
+    # Initialize a summarization pipeline
     summarizer = pipeline("summarization")
     
-    # Here, you can tailor the resume based on the job description
-    # For simplicity, we can summarize the job description or modify the resume text
-    tailored_resume = summarizer(resume_text, max_length=200, min_length=50, do_sample=False)
+    # Break the resume into chunks of 1000 characters or less
+    chunk_size = 1000
+    chunks = [resume_text[i:i+chunk_size] for i in range(0, len(resume_text), chunk_size)]
     
-    # You can add more sophisticated AI-powered modifications here
-    # For now, we return the summary of the job description as an example
-    return tailored_resume[0]['summary_text']
+    tailored_resume = []
+    
+    for chunk in chunks:
+        # Summarize each chunk
+        summary = summarizer(chunk, max_length=200, min_length=50, do_sample=False)
+        tailored_resume.append(summary[0]['summary_text'])
+    
+    # Combine all the summarized chunks
+    return " ".join(tailored_resume)
 
 # Streamlit UI for uploading resume and providing job description
 def app():
