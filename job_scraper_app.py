@@ -32,71 +32,75 @@ if job_keyword:
 
 
 
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+
+@st.cache_resource
+def get_driver():
+    options = Options()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    return webdriver.Chrome(ChromeDriverManager().install(), options=options)
+
 job_titles = []
 job_links = []
 
 if job_keyword:
     st.info("Searching Naukri.com...")
+    try:
+        driver = get_driver()
+        search_url = f"https://www.naukri.com/{job_keyword.replace(' ', '-')}-jobs"
+        driver.get(search_url)
+        time.sleep(3)  # wait for page to load
 
-    url = f"https://www.naukri.com/{job_keyword.replace(' ', '-')}-jobs"
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-    response = requests.get(url, headers=headers)
+        jobs = driver.find_elements(By.CLASS_NAME, "jobTuple")[:10]
 
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, "html.parser")
-        job_cards = soup.find_all('article', class_='jobTuple')[:10]
+        for job in jobs:
+            try:
+                title = job.find_element(By.CLASS_NAME, "title").text
+                link = job.find_element(By.CLASS_NAME, "title").get_attribute("href")
+                company = job.find_element(By.CLASS_NAME, "subTitle").text
+                location = job.find_element(By.CLASS_NAME, "location").text
+                job_titles.append(f"{title} | {company} | {location}")
+                job_links.append(link)
+            except Exception as e:
+                continue
 
-        if job_cards:
-            for i, card in enumerate(job_cards):
-                try:
-                    title = card.find('a', class_='title').text.strip()
-                    company = card.find('a', class_='subTitle').text.strip()
-                    location = card.find('li', class_='location').text.strip()
-                    link = card.find('a', class_='title')['href']
+        driver.quit()
 
-                    full_title = f"{title} | {company} | {location}"
-                    job_titles.append(full_title)
-                    job_links.append(link)
-                except:
-                    continue  # skip cards with missing data
+        if job_titles:
+            selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
+            selected_link = job_links[selected_index]
 
-            if job_titles:
-                selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
-                selected_link = job_links[selected_index]
+            st.markdown("### 📋 Job Description Preview")
+            driver = get_driver()
+            driver.get(selected_link)
+            time.sleep(3)
 
-                st.markdown("### 📋 Job Description Preview")
+            try:
+                job_desc_elem = driver.find_element(By.CLASS_NAME, "dang-inner-html")
+                job_desc = job_desc_elem.text
+            except:
+                job_desc = "Description not found."
 
-                job_desc = ""
-                try:
-                    job_resp = requests.get(selected_link, headers=headers)
-                    if job_resp.status_code == 200:
-                        job_soup = BeautifulSoup(job_resp.text, "html.parser")
-                        jd_div = job_soup.find('div', class_='dang-inner-html')
-                        job_desc = jd_div.get_text(separator="\n").strip() if jd_div else "Description not found."
-                    else:
-                        job_desc = "Failed to load job description."
-                except Exception as e:
-                    job_desc = f"Error: {str(e)}"
+            driver.quit()
+            st.text_area("Job Description", value=job_desc, height=300)
 
-                st.text_area("Job Description", value=job_desc, height=300)
-
-                st.markdown("### ✍️ Choose Resume Rewrite Format")
-
-                rewrite_style = st.radio(
-                    "Select a rewrite tone/style:",
-                    options=["Conservative", "Bold", "Keyword-Heavy", "Soft"],
-                    index=0
-                )
-
-                st.success(f"'{rewrite_style}' style selected. Ready to tailor your resume!")
-            else:
-                st.warning("No job listings found. Try a different keyword.")
+            st.markdown("### ✍️ Choose Resume Rewrite Format")
+            rewrite_style = st.radio(
+                "Select a rewrite tone/style:",
+                options=["Conservative", "Bold", "Keyword-Heavy", "Soft"],
+                index=0
+            )
+            st.success(f"'{rewrite_style}' style selected. Ready to tailor your resume!")
         else:
-            st.warning("Couldn't find job cards. Naukri might have changed layout.")
-    else:
-        st.error("Failed to fetch job data. Try again later.")
+            st.warning("No job cards found.")
+    except Exception as e:
+        st.error(f"Error fetching job listings: {e}")
 
 
 
