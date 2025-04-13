@@ -29,3 +29,22 @@ if job_keyword:
             st.markdown(f"**{i+1}. [{title}]({link})**  \n*Company:* {company}  \n*Location:* {location}", unsafe_allow_html=True)
     else:
         st.error("Failed to fetch job data. Try again later.")
+
+from docx import Document
+
+st.markdown("---")
+st.header("📄 Upload Your Resume")
+
+uploaded_file = st.file_uploader("Upload a .docx resume", type=["docx"])
+
+def extract_text_from_docx(docx_file):
+    doc = Document(docx_file)
+    return "\n".join([para.text for para in doc.paragraphs if para.text.strip() != ""])
+
+if uploaded_file:
+    resume_text = extract_text_from_docx(uploaded_file)
+    st.success("Resume uploaded successfully!")
+    
+    # Optional: Show a preview of resume
+    with st.expander("🔍 Click to preview your resume text"):
+        st.text(resume_text)
