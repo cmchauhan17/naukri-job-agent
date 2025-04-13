@@ -1,5 +1,6 @@
 import streamlit as st
 from docx import Document
+import io
 
 # Function to read .docx file and extract text
 def read_docx(file):
@@ -42,6 +43,13 @@ def tailor_resume(resume_text, job_description):
 
     return tailored_doc
 
+# Function to convert docx document to byte stream for download
+def convert_docx_to_bytes(doc):
+    doc_stream = io.BytesIO()
+    doc.save(doc_stream)
+    doc_stream.seek(0)
+    return doc_stream
+
 # Streamlit UI
 st.title("AI Resume Tailoring")
 
@@ -58,9 +66,13 @@ if uploaded_resume and job_description:
         # Call the function to tailor the resume
         tailored_resume = tailor_resume(resume_text, job_description)
 
-        # Save the tailored resume to .docx file
-        tailored_resume_path = "tailored_resume.docx"
-        tailored_resume.save(tailored_resume_path)
+        # Convert the tailored resume to bytes for downloading
+        tailored_resume_bytes = convert_docx_to_bytes(tailored_resume)
 
         # Provide the download link for the tailored resume
-        st.download_button("Download Tailored Resume", tailored_resume_path)
+        st.download_button(
+            label="Download Tailored Resume",
+            data=tailored_resume_bytes,
+            file_name="tailored_resume.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
