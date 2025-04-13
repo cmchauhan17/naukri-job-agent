@@ -45,8 +45,8 @@ def get_driver():
     options.add_argument("--no-sandbox")  # prevent sandboxing issues
     options.add_argument("--disable-dev-shm-usage")  # prevent memory issues
 
-    # Now, properly pass the options
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+    # Set the correct path using the executable_path argument
+    driver = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=options)
     return driver
 
 job_titles = []
@@ -104,10 +104,6 @@ if job_keyword:
             st.warning("No job cards found.")
     except Exception as e:
         st.error(f"Error fetching job listings: {e}")
-
-
-
-
 
 
 
