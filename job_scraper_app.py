@@ -2,9 +2,8 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 
-st.title("🔎 Naukri Job Finder")
-
-job_keyword = st.text_input("Enter job title or keyword (e.g., Data Analyst, Procurement Manager)")
+job_titles = []
+job_links = []
 
 if job_keyword:
     st.info("Searching Naukri.com...")
@@ -19,61 +18,55 @@ if job_keyword:
         soup = BeautifulSoup(response.text, "html.parser")
         job_cards = soup.find_all('article', class_='jobTuple')[:10]
 
-        st.subheader(f"Top {len(job_cards)} Jobs for '{job_keyword}':")
-        for i, card in enumerate(job_cards):
-            title = card.find('a', class_='title').text.strip()
-            company = card.find('a', class_='subTitle').text.strip()
-            location = card.find('li', class_='location').text.strip()
-            link = card.find('a', class_='title')['href']
+        if job_cards:
+            for i, card in enumerate(job_cards):
+                try:
+                    title = card.find('a', class_='title').text.strip()
+                    company = card.find('a', class_='subTitle').text.strip()
+                    location = card.find('li', class_='location').text.strip()
+                    link = card.find('a', class_='title')['href']
 
-            st.markdown(f"**{i+1}. [{title}]({link})**  \n*Company:* {company}  \n*Location:* {location}", unsafe_allow_html=True)
+                    full_title = f"{title} | {company} | {location}"
+                    job_titles.append(full_title)
+                    job_links.append(link)
+                except:
+                    continue  # skip cards with missing data
+
+            if job_titles:
+                selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
+                selected_link = job_links[selected_index]
+
+                st.markdown("### 📋 Job Description Preview")
+
+                job_desc = ""
+                try:
+                    job_resp = requests.get(selected_link, headers=headers)
+                    if job_resp.status_code == 200:
+                        job_soup = BeautifulSoup(job_resp.text, "html.parser")
+                        jd_div = job_soup.find('div', class_='dang-inner-html')
+                        job_desc = jd_div.get_text(separator="\n").strip() if jd_div else "Description not found."
+                    else:
+                        job_desc = "Failed to load job description."
+                except Exception as e:
+                    job_desc = f"Error: {str(e)}"
+
+                st.text_area("Job Description", value=job_desc, height=300)
+
+                st.markdown("### ✍️ Choose Resume Rewrite Format")
+
+                rewrite_style = st.radio(
+                    "Select a rewrite tone/style:",
+                    options=["Conservative", "Bold", "Keyword-Heavy", "Soft"],
+                    index=0
+                )
+
+                st.success(f"'{rewrite_style}' style selected. Ready to tailor your resume!")
+            else:
+                st.warning("No job listings found. Try a different keyword.")
+        else:
+            st.warning("Couldn't find job cards. Naukri might have changed layout.")
     else:
         st.error("Failed to fetch job data. Try again later.")
-
-job_titles = []
-job_links = []
-
-for i, card in enumerate(job_cards):
-    title = card.find('a', class_='title').text.strip()
-    company = card.find('a', class_='subTitle').text.strip()
-    location = card.find('li', class_='location').text.strip()
-    link = card.find('a', class_='title')['href']
-
-    full_title = f"{title} | {company} | {location}"
-    job_titles.append(full_title)
-    job_links.append(link)
-
-# Let user pick a job from the list
-selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
-selected_link = job_links[selected_index]
-
-job_titles = []
-job_links = []
-
-for i, card in enumerate(job_cards):
-    title = card.find('a', class_='title').text.strip()
-    company = card.find('a', class_='subTitle').text.strip()
-    location = card.find('li', class_='location').text.strip()
-    link = card.find('a', class_='title')['href']
-
-    full_title = f"{title} | {company} | {location}"
-    job_titles.append(full_title)
-    job_links.append(link)
-
-# Let user pick a job from the list
-selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
-selected_link = job_links[selected_index]
-
-st.markdown("### ✍️ Choose Resume Rewrite Format")
-
-rewrite_style = st.radio(
-    "Select a rewrite tone/style:",
-    options=["Conservative", "Bold", "Keyword-Heavy", "Soft"],
-    index=0
-)
-
-st.success(f"'{rewrite_style}' style selected. Ready to tailor your resume!")
-
 
 from docx import Document
 
