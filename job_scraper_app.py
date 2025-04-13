@@ -41,10 +41,11 @@ import time
 @st.cache_resource
 def get_driver():
     options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    # Use this to pass the options correctly
+    options.add_argument("--headless")  # run in headless mode
+    options.add_argument("--no-sandbox")  # prevent sandboxing issues
+    options.add_argument("--disable-dev-shm-usage")  # prevent memory issues
+
+    # Now, properly pass the options
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
     return driver
 
@@ -103,6 +104,7 @@ if job_keyword:
             st.warning("No job cards found.")
     except Exception as e:
         st.error(f"Error fetching job listings: {e}")
+
 
 
 
