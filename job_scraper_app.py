@@ -47,6 +47,33 @@ for i, card in enumerate(job_cards):
 selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
 selected_link = job_links[selected_index]
 
+job_titles = []
+job_links = []
+
+for i, card in enumerate(job_cards):
+    title = card.find('a', class_='title').text.strip()
+    company = card.find('a', class_='subTitle').text.strip()
+    location = card.find('li', class_='location').text.strip()
+    link = card.find('a', class_='title')['href']
+
+    full_title = f"{title} | {company} | {location}"
+    job_titles.append(full_title)
+    job_links.append(link)
+
+# Let user pick a job from the list
+selected_index = st.selectbox("Select a job to tailor your resume for:", range(len(job_titles)), format_func=lambda x: job_titles[x])
+selected_link = job_links[selected_index]
+
+st.markdown("### ✍️ Choose Resume Rewrite Format")
+
+rewrite_style = st.radio(
+    "Select a rewrite tone/style:",
+    options=["Conservative", "Bold", "Keyword-Heavy", "Soft"],
+    index=0
+)
+
+st.success(f"'{rewrite_style}' style selected. Ready to tailor your resume!")
+
 
 from docx import Document
 
