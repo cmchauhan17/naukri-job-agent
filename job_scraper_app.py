@@ -34,6 +34,7 @@ if job_keyword:
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 import time
@@ -45,8 +46,9 @@ def get_driver():
     options.add_argument("--no-sandbox")  # prevent sandboxing issues
     options.add_argument("--disable-dev-shm-usage")  # prevent memory issues
 
-    # Set the correct path using the executable_path argument
-    driver = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=options)
+    # Use the Service class to correctly handle the driver
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     return driver
 
 job_titles = []
@@ -104,7 +106,6 @@ if job_keyword:
             st.warning("No job cards found.")
     except Exception as e:
         st.error(f"Error fetching job listings: {e}")
-
 
 
 from docx import Document
